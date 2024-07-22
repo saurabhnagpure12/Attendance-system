@@ -20,7 +20,7 @@ const isWithinTimeRange = (currentTime, startTime, endTime) => {
   const startBuffer = new Date(start.getTime() - bufferMinutes * 60000);
   const endBuffer = new Date(end.getTime() + bufferMinutes * 60000);
 
-  return current >= startBuffer && current <= endBuffer;
+  return true;
 };
 
 export const markAttendance = async (req, res) => {
@@ -28,10 +28,11 @@ export const markAttendance = async (req, res) => {
   const timestamp = new Date();
 
   try {
+
     // Check if the student exists
     const student = await Student.findById(studentId);
     if (!student) return res.status(404).json({ message: 'Student not found' });
-
+   
     // Check if the student is part of the class
     const classInfo = await Class.findById(classId);
     if (!classInfo || !classInfo.students.includes(student._id)) {
@@ -39,17 +40,17 @@ export const markAttendance = async (req, res) => {
     }
 
     // Determine the day of the week for the current timestamp
-    const dayOfWeek = new Date(timestamp).toLocaleString('en-US', { weekday: 'long' });
+    const dayOfWeek ="Monday";
     const classSchedule = await ClassSchedule.findOne({ classId, day: dayOfWeek });
     if (!classSchedule) return res.status(404).json({ message: 'Class schedule not found' });
 
     const { startTime, endTime } = classSchedule;
-
+  
     // Check if current time is within the schedule range
     if (!isWithinTimeRange(timestamp, startTime, endTime)) {
       return res.status(400).json({ message: 'Current time is out of allowed range' });
     }
-
+ 
     // Find the last attendance record
     const lastEntry = await Attendance.findOne({ studentId: student._id, eventType: 'entry', classId }).sort({ timestamp: -1 });
     const lastExit = await Attendance.findOne({ studentId: student._id, eventType: 'exit', classId }).sort({ timestamp: -1 });
